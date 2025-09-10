@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Speech Training Game</title>
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: #121212; /* Dark background */
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #f5f5f5;
+    }
+
+    .container {
+      background: #1e1e1e;
+      padding: 30px;
+      border-radius: 15px;
+      text-align: center;
+      width: 420px;
+      max-width: 95%;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.6);
+    }
+
+    h1 {
+      font-size: 22px;
+      margin-bottom: 15px;
+      color: #ffffff;
+    }
+
+    h2 {
+      font-size: 20px;
+      margin: 20px 0;
+      color: #e0e0e0;
+    }
+
+    select, button {
+      margin: 10px 5px;
+      padding: 10px 15px;
+      font-size: 14px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    select {
+      background: #2b2b2b;
+      color: #f5f5f5;
+      border: 1px solid #555;
+    }
+
+    button {
+      background: #3a6ea5; /* Muted blue */
+      color: #fff;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #2f5883;
+    }
+
+    #result {
+      margin-top: 15px;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      display: inline-block;
+      min-width: 200px;
+    }
+
+    .correct { background: #2e7d32; color: #fff; }
+    .wrong { background: #c62828; color: #fff; }
+
+    .score {
+      margin-top: 15px;
+      font-size: 16px;
+      color: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 Speech Training Game 🎤</h1>
+    <label for="mode">Choose Training:</label>
+    <select id="mode" onchange="setTarget()">
+      <option value="english">English Words</option>
+      <option value="hindi">Hindi Words</option>
+      <option value="twister">Tongue Twister</option>
+    </select>
+    
+    <h2 id="targetWord">Press "New" to Start!</h2>
+    <button onclick="newTarget()">🔄 New</button>
+    <button onclick="startListening()">🎤 Speak</button>
+    <p id="result">Say the word above!</p>
+    <p class="score">⭐ Score: <span id="score">0</span></p>
+  </div>
+
+  <script>
+    const englishWords = [
+      "Hello", "Good morning", "Thank you", "How are you",
+      "I am fine", "What is your name", "Nice to meet you",
+      "Please help me", "I love learning", "Good night"
+    ];
+
+    const hindiWords = [
+      "नमस्ते (Namaste)", 
+      "कैसे हो (Kaise ho)", 
+      "धन्यवाद (Dhanyavaad)", 
+      "मैं ठीक हूँ (Main theek hoon)", 
+      "क्या कर रहे हो (Kya kar rahe ho)", 
+      "आपका नाम क्या है (Aapka naam kya hai)", 
+      "मुझे हिंदी पसंद है (Mujhe Hindi pasand hai)"
+    ];
+
+    const twisters = [
+      "She sells seashells by the seashore",
+      "Red lorry yellow lorry",
+      "Peter Piper picked a peck of pickled peppers",
+      "Chandu ke chacha ne chandu ki chachi ko chandi ke chamach se chatni chatai",
+      "Kaccha papita pakta nahi, pakka papita kaccha nahi"
+    ];
+
+    let target = "";
+    let recognitionLang = "en-US"; 
+    let score = 0;
+
+    function setTarget() { newTarget(); }
+
+    function newTarget() {
+      const mode = document.getElementById("mode").value;
+      let list;
+
+      if (mode === "english") {
+        list = englishWords;
+        recognitionLang = "en-US";
+      } else if (mode === "hindi") {
+        list = hindiWords;
+        recognitionLang = "hi-IN";
+      } else {
+        list = twisters;
+        recognitionLang = "en-US";
+      }
+
+      target = list[Math.floor(Math.random() * list.length)];
+      document.getElementById("targetWord").innerText = target;
+      document.getElementById("result").innerText = "Say the word above!";
+      document.getElementById("result").className = "";
+    }
+
+    function startListening() {
+      if (!target) { alert("Please select a mode and click New!"); return; }
+
+      const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+      recognition.lang = recognitionLang;
+      recognition.start();
+
+      recognition.onresult = function(event) {
+        const spoken = event.results[0][0].transcript.trim();
+        const resultEl = document.getElementById("result");
+
+        // 🔹 For Hindi: strip the Roman guide part (anything inside parentheses)
+        let compareTarget = target.split("(")[0].trim();
+
+        if (spoken.toLowerCase() === compareTarget.toLowerCase()) {
+          resultEl.innerHTML = "✅ Correct! You said: '" + spoken + "'";
+          resultEl.className = "correct";
+          score++;
+          document.getElementById("score").innerText = score;
+        } else {
+          resultEl.innerHTML = "❌ Try Again: You said '" + spoken + "'";
+          resultEl.className = "wrong";
+          if (score > 0) score--;
+          document.getElementById("score").innerText = score;
+        }
+      };
+
+      recognition.onerror = function() {
+        const resultEl = document.getElementById("result");
+        resultEl.innerHTML = "⚠️ Error occurred. Please try again.";
+        resultEl.className = "wrong";
+      };
+    }
+  </script>
+</body>
+</html>
